@@ -25,6 +25,7 @@ func RecorrerInorden(t *Arbol, s string) string {
 		return s
 	}
 }
+
 //Función recorrer in orden original
 func RecorrerInorden1(t *Arbol) {
 	if t == nil {
@@ -32,7 +33,7 @@ func RecorrerInorden1(t *Arbol) {
 	}
 	RecorrerInorden1(t.Izquierda)
 	fmt.Print(t.Valor)
-  fmt.Print(" - ")
+	fmt.Print(" - ")
 	RecorrerInorden1(t.Derecha)
 }
 func Separar(s string) {
@@ -181,54 +182,79 @@ func variables() {
 	entrada := strings.Split(cadena, "\n")
 	entrada = entrada[:(len(entrada) - 2)]
 
-	//postf:=strings.Split(operacion, " ")
 	a := make(map[int]string)
 	b := make(map[string]int)
 	for i := 0; i < len(entrada); i++ {
+
+		armarToken(armarToken(entrada[i]))
+		validar := strings.Split(entrada[i], " ")
 		separa := strings.Split(entrada[i], ":")
-		if separa[1] == "=" {
-			separa[0] = separa[0][:(len(separa[0]) - 1)]
-			//aqui se deben evaluar los token
-			variable := separa[0][(len(separa[0]) - 1):]
-			operacion := separa[0][:(len(separa[0]) - 2)]
-			comprobar := strings.Split(operacion, " ")
-			for j := 0; j < len(comprobar); j++ {
-				_, error := strconv.Atoi(comprobar[j])
-				if error != nil && comprobar[j] != "+" && comprobar[j] != "-" && comprobar[j] != "*" && comprobar[j] != "/" {
-					if len(a) > 0 {
-						ver := false
-						for k := 0; k < len(a); k++ {
-							if comprobar[j] == a[k] {
-								comprobar[j] = strconv.Itoa(b[a[k]])
-								ver = true
+		if validar[len(validar)-1] == ":=" {
+			if separa[1] == "=" {
+				//Se quita un espacio que queda al
+				separa[0] = separa[0][:(len(separa[0]) - 1)]
+				//aqui se deben evaluar los token
+				variable := separa[0][(len(separa[0]) - 1):]
+				operacion := separa[0][:(len(separa[0]) - 2)]
+				comprobar := strings.Split(operacion, " ")
+				for j := 0; j < len(comprobar); j++ {
+					_, error := strconv.Atoi(comprobar[j])
+					if error != nil && comprobar[j] != "+" && comprobar[j] != "-" && comprobar[j] != "*" && comprobar[j] != "/" {
+						if len(a) > 0 {
+							ver := false
+							for k := 0; k < len(a); k++ {
+								if comprobar[j] == a[k] {
+									comprobar[j] = strconv.Itoa(b[a[k]])
+									ver = true
+								}
 							}
-						}
-						if ver == false {
+							if ver == false {
+								fmt.Println("La variable: " + comprobar[j] + " no está almacenada")
+								break
+							}
+						} else {
 							fmt.Println("La variable: " + comprobar[j] + " no está almacenada")
 							break
 						}
-					} else {
-						fmt.Println("La variable: " + comprobar[j] + " no está almacenada")
-						break
 					}
 				}
+				operacion = ""
+				for j := 0; j < len(comprobar); j++ {
+					operacion = operacion + " " + comprobar[j]
+				}
+				operacion = operacion[1:]
+				a[len(a)] = variable
+				b[variable] = Operar(hacerArbol(operacion))
 			}
-			operacion = ""
-			for j := 0; j < len(comprobar); j++ {
-				operacion = operacion + " " + comprobar[j]
-			}
-			operacion = operacion[1:]
-			a[len(a)] = variable
-			b[variable] = Operar(hacerArbol(operacion))
+		} else {
+			fmt.Println("Ningun asignador encontrado")
 		}
+
 	}
 	for i := 0; i < len(a); i++ {
 		fmt.Println(b[a[i]])
 	}
 }
 
+//Haciendo tokens para validar las expresiones de las variables
+func armarToken(exp string) string {
+	elementos := strings.Split(exp, " ")
+	fmt.Println(len(elementos))
+	for i := 0; i < len(elementos); i++ {
+		_, error := strconv.Atoi(elementos[i])
+		if error == nil {
+			fmt.Println("Valor -> " + elementos[i])
+		} else if elementos[i] == "+" || elementos[i] == "-" || elementos[i] == "*" || elementos[i] == "/" {
+			fmt.Println("Operador -> " + elementos[i])
+		} else if elementos[i] == ":=" {
+			fmt.Println("Operador -> " + elementos[i])
+		} else {
+			fmt.Println("Variable ->" + elementos[i])
+		}
+	}
 
-
+	return exp
+}
 func main() {
 	/*
 	   var s string =""
@@ -244,14 +270,19 @@ func main() {
 	   fmt.Println("Arbol t4: "+RecorrerInorden(t4,""))
 	   fmt.Println(Operar(t4))
 	*/
-	//Prueba de construcción de arbol a partir de una entrada en postfijo
-	ent := "- * + 10 3 * +"
+	/*
+		//Prueba de construcción de arbol a partir de una entrada en postfijo
+		ent := "- * + 10 3 * +"
+		t4 := hacerArbol(ent)
+		//prueba de detección de errores
+		fmt.Println(detecError(t4, ""))
+		//prueba de la funcion que opera un arbol
+		fmt.Println(Operar(t4))
+		//prueba de la función que recibe y asgina valores a ciertas variables y luego opera con estas
+	*/
+	ent := "- + + 10 3 * +"
 	t4 := hacerArbol(ent)
-	//prueba de detección de errores
-	fmt.Println(detecError(t4,""))
-	t2 := &Arbol{&Arbol{&Arbol{nil, "-", nil}, "+", &Arbol{nil, "*", nil}}, "+", &Arbol{&Arbol{nil, "10", nil}, "*", &Arbol{nil, "3", nil}}}
-	fmt.Println(detecError(t2,""))
-	//prueba de la función que recibe y asgina valores a ciertas variables y luego opera con estas
-	variables()
+	fmt.Println(detecError(t4, ""))
+	//variables()
 
 }
