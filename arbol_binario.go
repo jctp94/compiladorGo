@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -185,8 +186,11 @@ func variables() {
 	a := make(map[int]string)
 	b := make(map[string]int)
 	for i := 0; i < len(entrada); i++ {
-
-		armarToken(armarToken(entrada[i]))
+		ver, valor := expresionesRegulares(entrada[i])
+		if !ver {
+			fmt.Println("los valores: " + valor + " no son valido")
+			break
+		}
 		validar := strings.Split(entrada[i], " ")
 		separa := strings.Split(entrada[i], ":")
 		if validar[len(validar)-1] == ":=" {
@@ -231,9 +235,36 @@ func variables() {
 		}
 
 	}
-	for i := 0; i < len(a); i++ {
+	/*for i := 0; i < len(a); i++ {
 		fmt.Println(b[a[i]])
+	}*/
+}
+
+func expresionesRegulares(exp string) (bool, string) {
+	comp := true
+	valor := ""
+	elementos := strings.Split(exp, " ")
+	for i := 0; i < len(elementos); i++ {
+		matchOp, _ := regexp.MatchString("^(\\+){1}$|^(\\-){1}$|^(\\*){1}$|^(\\/){1}$", elementos[i])
+		matchVar, _ := regexp.MatchString("^([A-Za-z_])([a-zA-Z0-9_]*)$", elementos[i])
+		matchNum, _ := regexp.MatchString("^([0-9]*)$", elementos[i])
+		matchAsig, _ := regexp.MatchString("^(:=){1}$", elementos[i])
+		if matchOp {
+			fmt.Println("Operador -> " + elementos[i])
+		} else if matchVar {
+			fmt.Println("Variable -> " + elementos[i])
+		} else if matchNum {
+			fmt.Println("Numero -> " + elementos[i])
+		} else if matchAsig {
+			fmt.Println("Asignador -> " + elementos[i])
+		} else {
+			comp = false
+			valor = valor + ", " + elementos[i]
+		}
+
 	}
+	fmt.Println("----------------------------------------------")
+	return comp, valor
 }
 
 //Haciendo tokens para validar las expresiones de las variables
@@ -247,7 +278,7 @@ func armarToken(exp string) string {
 		} else if elementos[i] == "+" || elementos[i] == "-" || elementos[i] == "*" || elementos[i] == "/" {
 			fmt.Println("Operador -> " + elementos[i])
 		} else if elementos[i] == ":=" {
-			fmt.Println("Operador -> " + elementos[i])
+			fmt.Println("Asignador -> " + elementos[i])
 		} else {
 			fmt.Println("Variable ->" + elementos[i])
 		}
@@ -280,9 +311,8 @@ func main() {
 		fmt.Println(Operar(t4))
 		//prueba de la función que recibe y asgina valores a ciertas variables y luego opera con estas
 	*/
-	ent := "- + + 10 3 * +"
-	t4 := hacerArbol(ent)
-	fmt.Println(detecError(t4, ""))
-	//variables()
-
+	//ent := "- + + 10 3 * +"
+	//t4 := hacerArbol(ent)
+	//fmt.Println(detecError(t4, ""))
+	variables()
 }

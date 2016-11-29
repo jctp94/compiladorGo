@@ -4,3 +4,10 @@ x y - z :=
 2 x + w :=
 8 w / 5 + i :=
 
+--------------------------------------
+Para prueba con simbolos equvicados
+5 3 + 2 1 - * x :-a=
+2 3 * y :=
+x y - z :=
+2 x + w :=
+8 w / 5 + i :=
