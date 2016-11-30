@@ -100,10 +100,10 @@ func detecError(t *Arbol, er1 string) string {
 	} else {
 		switch t.Valor {
 		case "+", "-", "*", "/":
-			er1 = detecError(t.Izquierda, "") + "\n" + detecError(t.Derecha, "")
+			er1 = detecError(t.Izquierda, "") + detecError(t.Derecha, "")
 			return er1
 		default:
-			er1 = "No hay un operador valido en el nodo cambie el valor de " + t.Valor + "\n" + detecError(t.Izquierda, "") + "\n" + detecError(t.Derecha, "")
+			er1 = "No hay un operador valido en el nodo cambie el valor de " + t.Valor + detecError(t.Izquierda, "") + detecError(t.Derecha, "")
 			return er1
 		}
 	}
@@ -133,15 +133,18 @@ func (s *Stack) Pop() *Arbol {
 }
 
 //La siguiente función crea un arbol a partir de una entrada en postfijo
-func hacerArbol(ent string) *Arbol {
+func hacerArbol(ent string) (*Arbol, string) {
+	er := ""
 	cadena := strings.Split(ent, " ")
 	arbol := &Arbol{nil, "", nil}
 
 	contador := 0
+	contadorNum := 0
 	s := NewStack()
 	for i := 0; i < len(cadena); i++ {
 		_, error := strconv.Atoi(cadena[i])
-		if i != 0 && error != nil && contador >= 2 && (cadena[i] == "+" || cadena[i] == "-" || cadena[i] == "*" || cadena[i] == "/") {
+		if contadorNum < 3 && i != 0 && error != nil && contador >= 2 && (cadena[i] == "+" || cadena[i] == "-" || cadena[i] == "*" || cadena[i] == "/") {
+			contadorNum = 0
 			td := s.Pop()
 			contador = contador - 1
 			ti := s.Pop()
@@ -150,25 +153,24 @@ func hacerArbol(ent string) *Arbol {
 			s.Push(arbol)
 			contador = contador + 1
 
+		} else if contadorNum > 2 {
+			er = "No puede haber más de dos números seguidos"
 		} else {
 			arbol = &Arbol{nil, cadena[i], nil}
+			contadorNum = contadorNum + 1
 			contador = contador + 1
 			s.Push(arbol)
 		}
 
 	}
 	arbol = s.Pop()
-	return arbol
-	/*	for i:=0; i< len(cadena); i++{
-		tree:=s.Pop()
-		fmt.Println(tree.Valor)
-	} */
-
+	return arbol, er
 }
 
 //Entran una serie de operaciones asignadas a distintas variables
 //y se cierra cuando se da enter después de un espacio en blanco
 func variables() {
+	fmt.Println("Por favor ingrese las expresiones de esta manera:" + "\n" + "1 2 + 3 4 * x :=" + "\n" + "para terminar teclee dos veces enter")
 	reader := bufio.NewReader(os.Stdin)
 	//txt, _ := reader.ReadString('\n')
 	cadena := ""
@@ -182,24 +184,25 @@ func variables() {
 	}
 	entrada := strings.Split(cadena, "\n")
 	entrada = entrada[:(len(entrada) - 2)]
-
+	puedoOperar := true
 	a := make(map[int]string)
 	b := make(map[string]int)
+	errores := make(map[int]string)
 	for i := 0; i < len(entrada); i++ {
 		ver, valor := expresionesRegulares(entrada[i])
-		if !ver {
-			fmt.Println("los valores: " + valor + " no son valido")
-			break
-		}
 		validar := strings.Split(entrada[i], " ")
 		separa := strings.Split(entrada[i], ":")
-		if validar[len(validar)-1] == ":=" {
+		if !ver {
+			errores[i] = "los valores: " + valor + " no son validos"
+			puedoOperar = false
+		} else if validar[len(validar)-1] == ":=" {
 			if separa[1] == "=" {
 				//Se quita un espacio que queda al
 				separa[0] = separa[0][:(len(separa[0]) - 1)]
 				//aqui se deben evaluar los token
-				variable := separa[0][(len(separa[0]) - 1):]
-				operacion := separa[0][:(len(separa[0]) - 2)]
+				temp := strings.Split(separa[0], " ")
+				variable := temp[len(temp)-1]
+				operacion := separa[0][:(len(separa[0]) - (len(variable) + 1))]
 				comprobar := strings.Split(operacion, " ")
 				for j := 0; j < len(comprobar); j++ {
 					_, error := strconv.Atoi(comprobar[j])
@@ -228,16 +231,39 @@ func variables() {
 				}
 				operacion = operacion[1:]
 				a[len(a)] = variable
-				b[variable] = Operar(hacerArbol(operacion))
+				//fmt.Println(i)
+				arb, er := hacerArbol(operacion)
+				if er != "" {
+					errores[i] = "Error en:" + operacion + "\n" + er
+				} else {
+					if detecError(arb, "") != "" {
+						errores[i] = detecError(arb, "") + "\n" + " en la operacion: " + operacion + "\n"
+					} else {
+						errores[i] = ""
+						b[variable] = Operar(arb)
+					}
+				}
+				//fmt.Println(detecError(hacerArbol(operacion), ""))
+				//fmt.Println(operacion)
+
 			}
 		} else {
 			fmt.Println("Ningun asignador encontrado")
 		}
-
+		fmt.Println("----------------------------------------------")
 	}
-	/*for i := 0; i < len(a); i++ {
-		fmt.Println(b[a[i]])
-	}*/
+
+	for k := 0; k < len(errores); k++ {
+		if errores[k] != "" {
+			puedoOperar = false
+			fmt.Println(errores[k])
+		}
+	}
+	if puedoOperar {
+		for i := 0; i < len(a); i++ {
+			fmt.Println(b[a[i]])
+		}
+	}
 }
 
 func expresionesRegulares(exp string) (bool, string) {
@@ -263,7 +289,6 @@ func expresionesRegulares(exp string) (bool, string) {
 		}
 
 	}
-	fmt.Println("----------------------------------------------")
 	return comp, valor
 }
 
@@ -314,5 +339,16 @@ func main() {
 	//ent := "- + + 10 3 * +"
 	//t4 := hacerArbol(ent)
 	//fmt.Println(detecError(t4, ""))
+	//variables()
+	/*ent := "2 + *"
+	t4, _ := hacerArbol(ent)
+	RecorrerInorden1(t4)
+	if detecError(t4, "") != "" {
+		fmt.Println("con errores")
+	}
+	*/
+	//prueba de detección de errores
+	//fmt.Println(detecError(t4, ""))
+
 	variables()
 }
